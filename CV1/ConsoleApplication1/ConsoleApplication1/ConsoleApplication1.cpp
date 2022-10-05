@@ -3,37 +3,82 @@
 #include <string>
 using namespace std;
 
-int whatever(const string& s) {
-    std::cout << s << std::endl;
-    //stringy pøedávat takhle - referencí
-    return 0;
+void zpracujArg(vector<string>& s, int& od, int& Do) {
+    for (int i = 0; i < s.size(); i++)
+    {
+        if (s[i]=="-f")
+        {
+
+            if (i + 1 >= s.size()) {
+                cerr << "You forgot the parameter!\n";
+                s.erase(s.begin() + i);
+                i--;
+            }
+            else {
+                try{
+                    od = stoi(s[i + 1]);
+                    
+                }
+                catch (exception) {
+                    cerr << "Wrong (likely non inteager) parameter\n";
+                    
+                }
+                s.erase(s.begin() + i, s.begin() + i + 2);
+                i--;
+            }
+        }
+        else if(s[i] == "-t")
+        {
+            if (i + 1 >= s.size()) {
+                cerr << "You forgot the parameter!\n";
+                s.erase(s.begin() + i);
+                i--;
+            }
+            else {
+                try {
+                    Do = stoi(s[i + 1]);
+                    
+                }
+                catch (exception) {
+                    cerr << "Wrong (likely non inteager) parameter\n";
+
+                }
+                s.erase(s.begin() + i, s.begin() + i + 2);
+                i--;
+            }
+            
+        }
+    }
+    if (od > Do) {
+        cerr << "It seems you swapped -f and -t I shall swap them for you\n";
+        swap(od, Do);
+    }
 }
 
-void nasobilkuj(const vector<string>& a){
+void nasobilkuj(const vector<string>& a,int od,int Do){
     //std::string s = std::to_string(a);
     for (int i = 1; i < a.size(); i++) {
-        for (int j = 1; j <= 10; j++) {
-            std::cout << std::stoi(a[i])*j << std::endl;
+        for (int j = od; j <= Do; j++) {
+            try{
+            cout << stoi(a[i])<<'*' << j << '=' << stoi(a[i]) * j << endl; }
+            catch (exception) {
+                cerr << "Oh dear - it seems "<< a[i] << " appears to be a mischevious argument! How queer!\n";
+                break;
+            }
         }
-        
+        cout << "\n";
     }
 }
 
 int main(int argc,char ** argv)
 {
-    //std::cout << "Hello World!" << std::endl;
     vector<string> arg( argv, argv+argc);
-    
-    nasobilkuj(arg);
+    int od = 1;
+    int Do = 10;
+    //vector<string> zpracovaneArg = 
+    zpracujArg(arg,od,Do);
+    //cout << "od:" << od << "\n" << "Do:" << Do << "\n";
+    nasobilkuj(arg,od,Do);
     
     return 0;
 }
-
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
