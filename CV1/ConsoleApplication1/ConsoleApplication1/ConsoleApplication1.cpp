@@ -8,7 +8,6 @@ void zpracujArg(vector<string>& s, int& od, int& Do) {
     {
         if (s[i]=="-f")
         {
-
             if (i + 1 >= s.size()) {
                 cerr << "You forgot the parameter!\n";
                 s.erase(s.begin() + i);
@@ -21,7 +20,6 @@ void zpracujArg(vector<string>& s, int& od, int& Do) {
                 }
                 catch (exception) {
                     cerr << "Wrong (likely non inteager) parameter\n";
-                    
                 }
                 s.erase(s.begin() + i, s.begin() + i + 2);
                 i--;
@@ -37,16 +35,13 @@ void zpracujArg(vector<string>& s, int& od, int& Do) {
             else {
                 try {
                     Do = stoi(s[i + 1]);
-                    
                 }
                 catch (exception) {
                     cerr << "Wrong (likely non inteager) parameter\n";
-
                 }
                 s.erase(s.begin() + i, s.begin() + i + 2);
                 i--;
             }
-            
         }
     }
     if (od > Do) {
@@ -55,7 +50,7 @@ void zpracujArg(vector<string>& s, int& od, int& Do) {
     }
 }
 
-void nasobilkuj(const vector<string>& a,int od,int Do){
+void nasobilkuj(const vector<string>& a, int od,int Do){
     //std::string s = std::to_string(a);
     for (int i = 1; i < a.size(); i++) {
         for (int j = od; j <= Do; j++) {
@@ -75,9 +70,7 @@ int main(int argc,char ** argv)
     vector<string> arg( argv, argv+argc);
     int od = 1;
     int Do = 10;
-    //vector<string> zpracovaneArg = 
     zpracujArg(arg,od,Do);
-    //cout << "od:" << od << "\n" << "Do:" << Do << "\n";
     nasobilkuj(arg,od,Do);
     
     return 0;
