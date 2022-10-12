@@ -3,7 +3,12 @@
 #include <string>
 using namespace std;
 
-void zpracujArg(vector<string>& s, int& od, int& Do) {
+struct{
+    int od = 1;
+    int Do = 10; 
+}Bounds;
+
+void zpracujArg(vector<string>& s) {
     for (int i = 0; i < s.size(); i++)
     {
         if (s[i]=="-f")
@@ -15,7 +20,7 @@ void zpracujArg(vector<string>& s, int& od, int& Do) {
             }
             else {
                 try{
-                    od = stoi(s[i + 1]);
+                    Bounds.od = stoi(s[i + 1]);
                     
                 }
                 catch (exception) {
@@ -34,7 +39,7 @@ void zpracujArg(vector<string>& s, int& od, int& Do) {
             }
             else {
                 try {
-                    Do = stoi(s[i + 1]);
+                    Bounds.Do = stoi(s[i + 1]);
                 }
                 catch (exception) {
                     cerr << "Wrong (likely non inteager) parameter\n";
@@ -44,34 +49,38 @@ void zpracujArg(vector<string>& s, int& od, int& Do) {
             }
         }
     }
-    if (od > Do) {
+    if (Bounds.od > Bounds.Do) {
         cerr << "It seems you swapped -f and -t I shall swap them for you\n";
-        swap(od, Do);
+        swap(Bounds.od, Bounds.Do);
     }
 }
 
-void nasobilkuj(const vector<string>& a, int od,int Do){
+void nasobilkuj(const string& a){
     //std::string s = std::to_string(a);
-    for (int i = 1; i < a.size(); i++) {
-        for (int j = od; j <= Do; j++) {
-            try{
-            cout << stoi(a[i])<<'*' << j << '=' << stoi(a[i]) * j << endl; }
-            catch (exception) {
-                cerr << "Oh dear - it seems "<< a[i] << " appears to be a mischevious argument! How queer!\n";
-                break;
-            }
+    for (int j = Bounds.od; j <= Bounds.Do; j++) {
+        try{
+            cout << a 
+            <<'*' << j << '=' 
+            << stoi(a) * j << endl; }
+        catch (exception) {
+            cerr << "Oh dear - it seems "<< a << " appears to be a mischevious argument! How queer!\n";
+            break;
         }
-        cout << "\n";
     }
+    
 }
+
+
 
 int main(int argc,char ** argv)
 {
     vector<string> arg( argv, argv+argc);
-    int od = 1;
-    int Do = 10;
-    zpracujArg(arg,od,Do);
-    nasobilkuj(arg,od,Do);
     
+    zpracujArg(arg);
+    for(string a:arg){
+        nasobilkuj(a);
+        cout << "\n";
+    }
+    //nasobilkuj("72");
     return 0;
 }
