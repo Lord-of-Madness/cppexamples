@@ -74,7 +74,7 @@ void nasobilkuj(const string& a){
 
 int main(int argc,char ** argv)
 {
-    vector<string> arg( argv, argv+argc);
+    vector<string> arg( argv+1, argv+argc);
     
     zpracujArg(arg);
     for(string a:arg){
