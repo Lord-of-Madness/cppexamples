@@ -84,7 +84,7 @@
 	}
 
 	inline void WCounter::ClearOutput() {
-		wordState wS = noWord;
+		wS = noWord;
 		sentenceState = false;
 		currentNum = 0;
 		charCount = 0;
