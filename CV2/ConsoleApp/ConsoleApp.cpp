@@ -7,19 +7,16 @@
 
 int main(int argc, char const* const* argv)
 {
+	WCounter OutputValues;
 	if (argc == 1) {
 		std::string buffer;
-		while (std::getline(std::cin, buffer)) {
-			countText(buffer);
-		}
+		while (std::getline(std::cin, buffer)) OutputValues.countText(buffer);
 	}
 	else {
 		for (int i = 1; i < argc; i++) {
 			std::ifstream is(argv[i]);
 			std::string buffer;
-			while (std::getline(is, buffer)) {
-				countText(buffer);
-			}
+			while (std::getline(is, buffer)) OutputValues.countText(buffer);
 		}
 	}
 	std::cout
