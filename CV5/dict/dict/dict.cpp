@@ -50,23 +50,11 @@ public:
 		return innerMap.count(key);
 	}
 };
-/*MyMap::MyMap()
-{
-	innerMap = dictionary();
-}
-
-MyMap::~MyMap()
-{
-	delete innerMap;
-}
-*/
 bool Isprefix(const std::string& key, const std::string& prefix) {
 	if (key.size() < prefix.size()) return false;
 	for (unsigned short c = 0; c < prefix.size(); c++)//Hehe c++
 	{
-		if (key[c] != prefix[c]) {
-			return false;
-		}
+		if (key[c] != prefix[c]) return false;
 	}
 	return true;
 }
