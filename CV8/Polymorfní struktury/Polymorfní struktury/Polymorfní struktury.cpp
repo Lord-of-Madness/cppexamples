@@ -1,6 +1,5 @@
-﻿// ReSharper disable IdentifierTypo
-#include <iostream>
-#include <memory>
+﻿#include <iostream>
+//#include <memory>
 #include <vector>
 class fruit
 {
