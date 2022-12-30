@@ -10,7 +10,7 @@ public:
         nextfree=&rake_[0][0];
     }
     void push_back(const T& x);
-    T& operator[](const int &i)
+    T& operator[](const int i)
     {
 	    return rake_[i/chunk_][i%chunk_];
     }
