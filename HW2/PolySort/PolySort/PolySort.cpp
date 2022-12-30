@@ -4,22 +4,36 @@
 #include <string>
 #include <vector>
 #include <tuple>
-#include <typeinfo>
-#include <map>
+#include <sstream>
+#include <memory>
+#include <exception>
+//#include <typeinfo>
+#include <algorithm>
+#include <functional>
+//#include "Source.cpp"
+//struct value_visitor;
 using namespace std;
+
+class inconsistency_exception : exception{
+public:
+	const char* what()const throw() override{
+		return "Inconsistent rows";
+	}
+};
+
 struct {
 	istream* input = &cin;
 	ostream* output = &cout;
 	char separator = ' ';
 	vector<tuple<char, int>> sort_columns;
-	const char accepted_types[2] = {'N','S'};
-	map<const char,const string>myID_to_realID = { {'N',typeid(int).name()},{'S',typeid(string).name()} };
+	const char accepted_types[2] = { 'N','S' };
+	//map<const char,const string>myID_to_realID = { {'N',typeid(int).name()},{'S',typeid(string).name()} };
 
 }parameters;//for sake of making it easier I do it this static way. If I were to scale it up I would naturaly make instances of this struct
 
-void arg_processing(const int argc, const vector<string>& args)
+void arg_processing(const size_t argc, const vector<string>& args)
 {
-	for (int i = 0; i < argc; ++i)
+	for (size_t i = 0; i < argc; ++i)
 	{
 		string arg = args[i];
 		if (arg.size() < 2)throw invalid_argument(arg);//neither option nor collumn can be one char long
@@ -43,7 +57,7 @@ void arg_processing(const int argc, const vector<string>& args)
 			parameters.output = &outfile;
 			break; }
 			case 's':
-				if(val.size()>1)throw invalid_argument(arg);
+				if (val.size() > 1)throw invalid_argument(arg);
 				parameters.separator = val[0];
 				break;
 			default:
@@ -53,16 +67,19 @@ void arg_processing(const int argc, const vector<string>& args)
 		else
 		{
 			char t;
-			for(char type :parameters.accepted_types)
+			bool correct = false;
+			for (char type : parameters.accepted_types)
 			{
 				if (type == arg[0]) {
+					correct = true;
 					t = type; break;
 				}
 			}
+			if(!correct) throw invalid_argument(arg);
 			int n;
-			if(!isdigit(arg[1]))throw invalid_argument(arg);//want to avoid negative numbers and plus sign which would get parsed
+			if (!isdigit(arg[1]))throw invalid_argument(arg);//want to avoid negative numbers and plus sign which would get parsed
 			n = stoi(arg.substr(1));//would throw invalid_argument if exception which is what I am catching anyway
-			parameters.sort_columns.emplace_back(make_tuple( t,n ));
+			parameters.sort_columns.emplace_back(make_tuple(t, n));
 		}
 	}
 
@@ -70,115 +87,166 @@ void arg_processing(const int argc, const vector<string>& args)
 
 
 
-/*class polyItem
+
+class abstractvalue
 {
 public:
-	polyItem() = default;
-
-	polyItem(string type, void* data)
-		: type_(move(type)),
-		  data_(data)
-	{
-	}
-	tuple<string,void*> getdata()
-	{
-		return { type_,data_ };
-	}
-private:
-	string type_;//so I would like it if I could store the actual type however in C++ type is not a real thing its more like a weird reference to some obscure object and I din't want to deal with that (but it could be probably optimized as a pointer to type)
-	void* data_{};//alright hear me out: this may look scary but how else am I supposed to store the values as their own types other then void pointers + type info?
-};*/
-/*template<typename T>
-class polyItem2
+	virtual void print()const = 0;
+	virtual unique_ptr<abstractvalue> clone() = 0;
+	char type = 0;
+};
+class intvalue final :public abstractvalue
 {
 public:
-	polyItem2() = default;
-
-	polyItem2( T data)
-		: data_(data)
-	{
+	intvalue(int val) {
+		type = 'N';
+		this->val = val;
 	}
-	T getdata()
+	bool operator<(intvalue x)const
 	{
-		return data_;
+		return val < x.val;
 	}
-private:
-	T data_;
-};*/
-
-class poly_vector
+	unique_ptr<abstractvalue> clone() override
+	{
+		return make_unique<intvalue>(*this);
+	}
+	void print()const override
+	{
+		cout << val;
+	}
+	int val;
+};
+class stringvalue final :public abstractvalue
 {
 public:
-	poly_vector(const int len) :len_(len) { vecCount = 0; }
-	void sort(const tuple<char,int> &col)
-	{
-		const string type = parameters.myID_to_realID[get<0>(col)];
-		int collumn = get<1>(col);
-		map<polyItem,vector<polyItem>> items;
-		for (size_t i = 0;i<in_vector_.size();i++)
-		{
-			items.insert(in_vector_[i][collumn],&in_vector_[i]);
-		}
-
+	stringvalue(string val) {
+		type = 'S';
+		this->val = val;
 	}
-	void add(vector<string> &thing_to_add)
+	bool operator<(stringvalue x)const
 	{
-		//(typeid(T).name(), thing_to_add)
-		vector<polyItem> ar(len_);
-		for (string& item : thing_to_add)
-		{
-			bool is_number = true;
-			for(const char c : item)
-			{
-				if (!isdigit(c)) { is_number = false; break; }
-			}
-			if(is_number)
-			{
-				int x = stoi(item);
-				ar.emplace_back(typeid(int).name(), &x);//oh no x gets lost in the void right?
-			}
-			else
-			{
-				ar.emplace_back(typeid(string).name(), &item);
-			}
-		}
-		in_vector_.emplace_back(ar);
-		++vecCount;
+		return val < x.val;
 	}
-private:
-	int vecCount;
-	const int len_;
-	vector<vector<polyItem>> in_vector_;//I tried to make it a vector of fixed size arrays but couldn't figure out how to set the fixed size dynamicaly and without new() It might have been a silly idea but it was on the edge of possibility
+	unique_ptr<abstractvalue> clone() override
+	{
+		return make_unique<stringvalue>(*this);
+	}
+	void print()const override
+	{
+		cout << val;
+	}
+	string val;
 };
 
-poly_vector parse_input()
+class my_list
+{
+public:
+	abstractvalue& operator[](const int i)const
+	{
+		return *inner_list[i];
+	}
+	my_list() {}
+	void add(string s) {//TODO tune this
+		stringstream stream(s);
+		int inteager;
+		if (stream >> inteager)
+			add(make_unique<intvalue>(inteager));
+		else
+			add(make_unique<stringvalue>(s));
+	}
+	void add(unique_ptr<abstractvalue> unique)
+	{
+		inner_list.push_back(move(unique));
+	}
+	size_t size() {
+		return inner_list.size();
+	}
+	void clone(const my_list& l)
+	{
+		for (auto&& x : l.inner_list) { inner_list.push_back(x->clone()); }
+	}
+	void print()const
+	{
+		for (auto&& cell : inner_list) {
+			cell->print();
+			cout << ' ';//lets hope this won't cause any trouble
+		}
+	}
+	my_list(const my_list& s) { clone(s); }
+	my_list& operator=(const my_list& s)
+	{
+		if (this == &s)return *this;
+		inner_list.clear();
+		clone(s);
+		return *this;
+	};
+private:
+	vector<unique_ptr<abstractvalue>> inner_list;
+};
+
+
+
+
+class table
+{
+public:
+	table() = default;
+
+	void print() const
+	{
+		for (const my_list& item : pole)
+		{
+			item.print();
+			cout << endl;
+		}
+	}
+	void sortList(tuple<char, int> t)
+	{
+		char type = get<0>(t);
+		int index = get<1>(t);
+		if(type == 'N')
+			sort(pole.begin(), pole.end(),[index](my_list &a, my_list &b){return (dynamic_cast<intvalue*>(&a[index]) < dynamic_cast<intvalue*>(&b[index])); });
+		else if (type == 'S')
+			sort(pole.begin(), pole.end(), [index](my_list &a, my_list &b) {return (dynamic_cast<stringvalue*>(&a[index]) < dynamic_cast<stringvalue*>(&b[index])); });
+
+	}
+	void add(my_list& l)
+	{
+		pole.push_back(move(l));//for some reason this clones the list.
+	}
+
+private:
+	vector<my_list> pole;
+};
+
+
+
+
+void parse_input(table &poly_v)
 {
 	string line;
 	size_t len = 0;
-	//getline(*parameters.input,line);
-	//const int len = line.size();
-	poly_vector v(len);
-	while (parameters.input->eofbit)
+	while (getline(*parameters.input, line))
 	{
-		getline(*parameters.input, line);
-		if (len == 0)len = line.size();
-		else if (len != line.size())throw "Inconsistent rows";//lazy to write my own exception
-		vector<string> vs(len);
-		unsigned int start = 0U;
-		auto end = line.find(parameters.separator);
-		while (end != std::string::npos)
+		my_list vs;
+		size_t start = 0, end = 0;
+		while (end != string::npos)
 		{
-			vs.emplace_back(line.substr(start, end - start));
-			start = end + 1;
 			end = line.find(parameters.separator, start);
+			vs.add(line.substr(start, end - start));
+			start = end + 1;
 		}
-		v.add(vs);
-
+		if (len == 0)len = vs.size();
+		else if (len != vs.size()) {
+			throw inconsistency_exception();
+		}
+		poly_v.add(vs);
 	}
 }
 
-int main(const int argc, char** argv)
+int main(const int argc, char* argv[])
 {
+	//argument processing
 	vector<string> args;
 	for (int i = 1; i < argc; ++i)
 		args.emplace_back(argv[i]);
@@ -190,18 +258,24 @@ int main(const int argc, char** argv)
 		cout << e.what();
 		return 0;
 	}
-	catch (string &e)
+
+	table poly_v;
+	//parse input
+	try {
+		parse_input(poly_v);
+	}
+	catch (inconsistency_exception& e)
 	{
-		cout << e;
+		cout << e.what();
 		return 0;
 	}
-	poly_vector poly_v = parse_input();
-	
-	// parsování vstupu
-	for (auto &col:parameters.sort_columns)
+	//sort the table
+	for (auto&& col = parameters.sort_columns.rbegin(); col != parameters.sort_columns.rend(); ++col)
 	{
-		poly_v.sort(col);
+		poly_v.sortList(*col);
 	}
-	//sorter
-	// printni polymorfní array
+	// print the table
+	poly_v.print();
 }
+
+
