@@ -27,8 +27,11 @@ struct
 {
 	istream *input = &cin;
 	ostream *output = &cout;
+	ifstream infile;
+	ofstream outfile;
 	char separator = ' ';
 	vector<tuple<char, int>> sort_columns;
+	vector<char> type_columns;
 	const char accepted_types[2] = {'N', 'S'};
 	// map<const char,const string>myID_to_realID = { {'N',typeid(int).name()},{'S',typeid(string).name()} };
 
@@ -55,14 +58,14 @@ void arg_processing(const size_t argc, const vector<string> &args)
 			{
 			case 'i':
 			{
-				ifstream infile(val, ifstream::in);
-				parameters.input = &infile;
+				parameters.infile = ifstream(val, ifstream::in);//i need to have it stored somewhere and without using "new" it had to be this way
+				parameters.input = &parameters.infile;
 				break;
 			}
 			case 'o':
 			{
-				ofstream outfile(val, ofstream::out);
-				parameters.output = &outfile;
+				parameters.outfile =  ofstream(val, ofstream::out);
+				parameters.output = &parameters.outfile;
 				break;
 			}
 			case 's':
@@ -113,7 +116,7 @@ public:
 		type = 'N';
 		this->val = val;
 	}
-	bool operator<(intvalue x) const
+	bool operator<(intvalue &x) const
 	{
 		return val < x.val;
 	}
@@ -135,7 +138,7 @@ public:
 		type = 'S';
 		this->val = val;
 	}
-	bool operator<(stringvalue x) const
+	bool operator<(stringvalue &x) const
 	{
 		return val < x.val;
 	}
@@ -159,13 +162,21 @@ public:
 	}
 	my_list() {}
 	void add(string s)
-	{ // TODO tune this
-		stringstream stream(s);
-		int inteager;
-		if (stream >> inteager)
-			add(make_unique<intvalue>(inteager));
-		else
+	{
+		size_t pos = inner_list.size();
+		char required_type = parameters.type_columns[pos];
+		switch (required_type)
+		{
+		case 'N':
+			add(make_unique<intvalue>(stoi(s)));
+			break;
+		case 'S':
 			add(make_unique<stringvalue>(s));
+			break;
+		default:
+			throw exception();
+			break;
+		}
 	}
 	void add(unique_ptr<abstractvalue> unique)
 	{
@@ -184,10 +195,13 @@ public:
 	}
 	void print() const
 	{
+		size_t cnt = 0;
 		for (auto &&cell : inner_list)
 		{
 			cell->print();
-			cout << ' '; // lets hope this won't cause any trouble
+			++cnt;
+			if(cnt!=inner_list.size())
+			cout << parameters.separator;
 		}
 	}
 	my_list(const my_list &s) { clone(s); }
@@ -220,22 +234,35 @@ public:
 	void sortList(tuple<char, int> t)
 	{
 		char type = get<0>(t);
-		int index = get<1>(t);
+		int index = get<1>(t)-1;
 		if (type == 'N')
-			sort(rows.begin(), rows.end(), [index](my_list &a, my_list &b)
-				 { return (dynamic_cast<intvalue *>(&a[index]) < dynamic_cast<intvalue *>(&b[index])); });
+			sort(rows.begin(), rows.end(), [index](const my_list &a, const my_list &b)
+				{return *dynamic_cast<intvalue*>(&a[index])<*dynamic_cast<intvalue*>(&b[index]); });//So i have noticed that this is somewhat ineffective as the reasignment is doing a lot of copiing... but I really really don't want to write my own sort
 		else if (type == 'S')
-			sort(rows.begin(), rows.end(), [index](my_list &a, my_list &b)
-				 { return (dynamic_cast<stringvalue *>(&a[index]) < dynamic_cast<stringvalue *>(&b[index])); });
+			sort(rows.begin(), rows.end(), [index](const my_list &a,const my_list &b)
+				 { return *dynamic_cast<stringvalue *>(&a[index]) < *dynamic_cast<stringvalue *>(&b[index]); });
 	}
 	void add(my_list &l)
 	{
-		rows.push_back(move(l)); // for some reason this clones the list.
+		rows.push_back(move(l)); // for some reason this clones the list. Well... I guess I understand why it happens but still don"t know how to fix it.
 	}
 
 private:
 	vector<my_list> rows;
 };
+
+void prepare_column_types(const size_t len){
+	for(size_t i=0;i<len;i++){
+		parameters.type_columns.emplace_back('S');
+	}
+	for(tuple<char,int> col:parameters.sort_columns){
+		char type = get<0>(col);
+		int pos = get<1>(col);
+		if(type!='S'){
+			parameters.type_columns[pos-1]=type;
+		}
+	}
+}
 
 void parse_input(table &table_)
 {
@@ -243,21 +270,28 @@ void parse_input(table &table_)
 	size_t len = 0;
 	while (getline(*parameters.input, line))
 	{
-		my_list vs;
+		my_list lst;
 		size_t start = 0, end = 0;
+		if (len == 0){
+			for(char c : line)
+			{
+				if (c == parameters.separator)++len;
+			}
+			++len;
+			if(len==0)throw inconsistency_exception();
+			prepare_column_types(len);
+			}
 		while (end != string::npos)
 		{
 			end = line.find(parameters.separator, start);
-			vs.add(line.substr(start, end - start));
+			lst.add(line.substr(start, end - start));
 			start = end + 1;
 		}
-		if (len == 0)
-			len = vs.size();
-		else if (len != vs.size())
+		if (len != lst.size())
 		{
 			throw inconsistency_exception();
 		}
-		table_.add(vs);
+		table_.add(lst);
 	}
 }
 
@@ -269,11 +303,11 @@ int main(const int argc, char *argv[])
 		args.emplace_back(argv[i]);
 	try
 	{
-		arg_processing(argc - 1, args);
+		arg_processing(static_cast<size_t>(argc) - 1, args);
 	}
 	catch (invalid_argument &e)
 	{
-		cout << e.what();
+		cerr << e.what();
 		return 0;
 	}
 
@@ -285,9 +319,14 @@ int main(const int argc, char *argv[])
 	}
 	catch (inconsistency_exception &e)
 	{
-		cout << e.what();
+		cerr << e.what();
 		return 0;
 	}
+	catch (exception &e)
+	{
+		cerr << e.what();
+		return 0;
+	}	
 	// sort the table
 	for (auto &&col = parameters.sort_columns.rbegin(); col != parameters.sort_columns.rend(); ++col)
 	{
