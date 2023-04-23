@@ -1,8 +1,7 @@
 #include "file_access.h"
-#include <exception>
-#include<map>
+#include<unordered_map>
 #include<deque>
-
+#include<list>
 
 template <typename ValueType, size_t arity, typename EvictionPolicy>
 class cached_container;
@@ -16,20 +15,25 @@ struct node : public persistent_node<ValueType, arity> {
 	using p_n = persistent_node<ValueType, arity>;
 	using cc = cached_container<ValueType, arity, EvictionPolicy>;
 public:
-	node(internal_ptr ip=null_internal_ptr, cc* cache=nullptr) : ip(ip), value(*ip),cache(cache) {}//only here is the actual lookup to the data
-	void get_ptr() {
+	node(const internal_ptr ip = null_internal_ptr, cc* cache = nullptr) : ip(ip), cache(cache) {}
+	node(const internal_ptr ip, cc* cache,const p_n pn) : ip(ip), cache(cache) {
+		p_n::value = pn.value;
+		p_n::ptr = pn.ptr;
+	}
+	void increment_counter() {
 		++ptr_counter;
 	}
-	pers_ptr_t get_child(size_t index) {
+	pers_ptr_t get_child(const size_t index) {
 		return &cache->operator[](p_n::ptr[index]);
 	}
 	void release_ptr() {
 		--ptr_counter;
-		cache->release_ptr(ip);
+		if (ptr_counter == 0)
+			cache->release_ptr(ip);
 	}
-	ValueType value;
-	size_t ptr_counter = 0;
 	internal_ptr ip;
+	size_t ptr_counter = 0;
+	EvictionPolicy::hint_type hint{};
 private:
 	cc* cache;
 };
@@ -39,17 +43,22 @@ template < typename ValueType, size_t arity, typename EvictionPolicy>
 class pers_ptr {
 public:
 	pers_ptr(const pers_ptr&) = delete;
-	pers_ptr(pers_ptr&& other) noexcept :data(std::move(other.data)) {}
+	pers_ptr(pers_ptr&& other) noexcept :data(std::move(other.data)) { 
+		data->increment_counter();
+	}
 	pers_ptr(node<ValueType, arity, EvictionPolicy>* data) : data(data) {
-		data->get_ptr();
+		data->increment_counter();
 	}
 	~pers_ptr() {
 		data->release_ptr();
 	}
 	pers_ptr& operator=(const pers_ptr&) = delete;
 	pers_ptr& operator=(pers_ptr&& other) noexcept {
-		if (other.data == this->data)return *this;
+		if (other.data == data)return *this;
+		if(data->ip!=null_internal_ptr)
+			data->release_ptr();
 		data = std::move(other.data);
+		data->increment_counter();
 		return *this;
 	}
 	explicit operator bool() const noexcept {
@@ -57,16 +66,15 @@ public:
 		return true;
 	}
 	pers_ptr get_ptr(size_t index) {
-		if (index >= arity)throw std::exception("get_ptr: index was greater then arity");
+		if (index >= arity)throw "get_ptr: index was greater then arity";
 		return data->get_child(index);
 	}
 	const ValueType& operator*() {
 		return data->value;
 	}
-	const ValueType* operator->() {//returns a pointer to the cached val
+	const ValueType* operator->() {
 		return &data->value;
 	}
-	/* other public methods may be IMPLEMENTATION-DEFINED */
 private:
 	node<ValueType, arity, EvictionPolicy>* data;
 
@@ -81,41 +89,44 @@ template <typename ValueType, size_t arity, typename EvictionPolicy>
 class cached_container {
 	using pp = pers_ptr<ValueType, arity, EvictionPolicy>;
 	using node_t = node<ValueType, arity, EvictionPolicy>;
+	using hint_type = EvictionPolicy::hint_type;
 public:
-	cached_container(file_descriptor fd, size_t size) :fd(fd), cache_capacity(size) {
+	cached_container(size_t size,file_descriptor fd) :cache_capacity(size), fd(fd) {
 
 	}
 	pp root_ptr() {
-		return &root_node;
+		return &this->operator[](root_internal_ptr);
 	}
 	pp null_ptr() {
 		return &null_node;
 	}
 	void release_ptr(internal_ptr p) {
-		ep->unlock(p);
+		cache[p].hint = ep.unlock(p);
 	}
-	/* other public methods may be IMPLEMENTATION-DEFINED */
 	node_t& operator[](internal_ptr key) {
-		if (cache.contains(key)) {
-			node_t n = cache[key];
-			if (n.ptr_counter == 0)ep->relock(key, 0);
-			return cache[key];//double lookup but I don't want to handle auto inserting keys and other options looked too clunky
+		if (key == null_internal_ptr)return null_node;
+		auto i = cache.find(key);
+		if (cache.end()!=i) {
+			node_t& n = i->second;
+			if (n.ptr_counter == 0)ep.relock(key, n.hint);
+			return n; 
+		}
+		if (cache.size() >= cache_capacity) {
+			cache.erase(ep.release());
+		}
+		ep.load(key);
+		persistent_node<ValueType, arity> new_node{};
 
-		}
-		if (cache.size() >= cache_capacity - 1) {
-			cache.erase(ep->release());
-		}
-		ep->load(key);
-		ep->relock(key, 0);
-		cache[key] = node(key,this);
+		fa.read(fd, key, new_node);
+		return cache[key] = node_t(key, this, new_node);
 	}
 private:
-	file_descriptor fd;
-	std::map<internal_ptr, node_t> cache;
+	std::unordered_map<internal_ptr, node_t> cache;
 	size_t cache_capacity;
-	EvictionPolicy* ep;
-	node_t root_node = node( root_internal_ptr,this );
-	node_t null_node = node(null_internal_ptr,this);
+	file_descriptor fd;
+	EvictionPolicy ep{};
+	node_t null_node = node(null_internal_ptr, this);
+	file_access<persistent_node<ValueType, arity>> fa{};
 };
 
 
