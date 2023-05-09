@@ -1,6 +1,5 @@
 #include "file_access.h"
 #include<unordered_map>
-#include<deque>
 #include<list>
 
 template <typename ValueType, size_t arity, typename EvictionPolicy>
@@ -92,7 +91,7 @@ class cached_container {
 	using hint_type = EvictionPolicy::hint_type;
 public:
 	cached_container(size_t size,file_descriptor fd) :cache_capacity(size), fd(fd) {
-
+		cache.reserve(size);
 	}
 	pp root_ptr() {
 		return &this->operator[](root_internal_ptr);
@@ -135,17 +134,15 @@ private:
 
 class EvictionOldestUnlock {
 public:
-	using hint_type = internal_ptr;
+	using hint_type = std::list<internal_ptr>::const_iterator;
 	void load(internal_ptr ptr) {}                  // new cache node loaded from file
 	hint_type unlock(internal_ptr ptr)           // cached node unlocked (free to release)
 	{
 		oldest.push_back(ptr);
-		return ptr;//random retrun
+		return --oldest.cend();
 	}
-	void relock(internal_ptr ptr, hint_type)     // previously unlocked node from the cache that is locked again
+	void relock(internal_ptr ptr, hint_type it)     // previously unlocked node from the cache that is locked again
 	{
-		auto it = oldest.begin();
-		while (*it != ptr)++it;
 		oldest.erase(it);
 	}
 	internal_ptr release()                    // eviction victim to be released
@@ -155,6 +152,5 @@ public:
 		return ip;
 	}
 private:
-	std::deque<hint_type> oldest;//Not sure whats the best data structure but I needed a queue with erase. (Apparently std::queue is just restricted deque and doesn't have erase)
-	//If evicitonPolicy doesn't have access to the cache(which is how the framework seem to be designed) then it must keep records of some kind
+	std::list<internal_ptr> oldest;
 };
