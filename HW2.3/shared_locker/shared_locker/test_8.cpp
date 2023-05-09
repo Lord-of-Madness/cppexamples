@@ -113,7 +113,7 @@ void run_test() {
     }
 }
 
-int main() {
+/*int main() {
     run_test();
     std::cout << "OK" << std::endl;
-}
+}*/

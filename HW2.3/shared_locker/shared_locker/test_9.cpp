@@ -115,7 +115,7 @@ void run_test() {
     test_unit<false>(locker_, __LINE__, {500, 1500}, {250, 1750}, {0, 2000});
 }
 
-int main() {
+/*int main() {
     run_test();
     std::cout << "OK" << std::endl;
-}
+}*/

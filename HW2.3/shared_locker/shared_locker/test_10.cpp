@@ -118,7 +118,7 @@ void run_test() {
     thread.join();
 }
 
-int main() {
+/*int main() {
     run_test();
     std::cout << "OK" << std::endl;
-}
+}*/

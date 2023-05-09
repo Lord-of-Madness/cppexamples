@@ -104,7 +104,7 @@ void run_test() {
     multi_test<exclusive_lock, shared_lock>(locker_);
 }
 
-int main() {
+/*int main() {
     run_test();
     std::cout << "OK" << std::endl;
-}
+}*/
