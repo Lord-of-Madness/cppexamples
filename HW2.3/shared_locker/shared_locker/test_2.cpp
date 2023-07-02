@@ -1,3 +1,7 @@
+#ifndef test2
+#define test2
+
+
 #include <chrono>
 #include <iostream>
 #include <semaphore>
@@ -50,7 +54,7 @@ void test_unit(locker &locker_, std::size_t line, std::pair<std::size_t, std::si
 }
 
 template<class FirstLock, class SecondLock>
-void multi_test(locker &locker_) {
+void multi_test2(locker &locker_) {
 
     // full overlap:
 
@@ -97,14 +101,15 @@ void multi_test(locker &locker_) {
     test_unit<FirstLock, SecondLock>(locker_, __LINE__, {500, 1500}, {0, 2000});
 }
 
-void run_test() {
+void run_test2() {
     locker locker_;
-    multi_test<exclusive_lock, exclusive_lock>(locker_);
-    multi_test<shared_lock, exclusive_lock>(locker_);
-    multi_test<exclusive_lock, shared_lock>(locker_);
+    multi_test2<exclusive_lock, exclusive_lock>(locker_);
+    multi_test2<shared_lock, exclusive_lock>(locker_);
+    multi_test2<exclusive_lock, shared_lock>(locker_);
 }
 
 /*int main() {
     run_test();
     std::cout << "OK" << std::endl;
 }*/
+#endif

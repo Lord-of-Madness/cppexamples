@@ -45,27 +45,28 @@ void test_unit(locker &locker_, std::size_t line, std::pair<std::size_t, std::si
     thread.request_stop();
 }
 
-void run_test() {
+void run_test9() {
     locker locker_;
 
-    // full overlap:
+    // super overlaps:
 
-    // |---| <- unlock first
-    // |---|
-    // |---|
-    test_unit<false>(locker_, __LINE__, {0, 1000}, {0, 1000}, {0, 1000});
+    // |------| <- unlock first
+    //  |----|
+    //   |--|
+    test_unit<false>(locker_, __LINE__, { 0, 2000 }, { 250, 1750 }, { 500, 1500 });
 
-    // |---|
-    // |---| <- unlock first
-    // |---|
-    test_unit<true>(locker_, __LINE__, {0, 1000}, {0, 1000}, {0, 1000});
+    //   |--| <- unlock first
+    //  |----|
+    // |------|
+    test_unit<false>(locker_, __LINE__, { 500, 1500 }, { 250, 1750 }, { 0, 2000 });
 
     // half-full overlaps:
 
     // |---| <- unlock first
     // |---|
     //   |-|
-    test_unit<false>(locker_, __LINE__, {0, 1000}, {0, 1000}, {500, 1000});
+    std::cout << "Checkpoint3" << std::endl;
+    test_unit<false>(locker_, __LINE__, {0, 1000}, {0, 1000}, {500, 1000});//Got so far
 
     // |---|
     // |---| <- unlock first
@@ -102,17 +103,21 @@ void run_test() {
     // |-|
     test_unit<true>(locker_, __LINE__, {0, 1000}, {0, 500}, {0, 500});
 
-    // super overlaps:
+    
 
-    // |------| <- unlock first
-    //  |----|
-    //   |--|
-    test_unit<false>(locker_, __LINE__, {0, 2000}, {250, 1750}, {500, 1500});
+    // full overlap:
 
-    //   |--| <- unlock first
-    //  |----|
-    // |------|
-    test_unit<false>(locker_, __LINE__, {500, 1500}, {250, 1750}, {0, 2000});
+    // |---|
+    // |---| <- unlock first
+    // |---|
+    std::cout << "Checkpoint1" << std::endl;
+    test_unit<true>(locker_, __LINE__, { 0, 1000 }, { 0, 1000 }, { 0, 1000 });
+
+    // |---| <- unlock first
+    // |---|
+    // |---|
+    std::cout << "Checkpoint2" << std::endl;
+    test_unit<false>(locker_, __LINE__, { 0, 1000 }, { 0, 1000 }, { 0, 1000 });
 }
 
 /*int main() {

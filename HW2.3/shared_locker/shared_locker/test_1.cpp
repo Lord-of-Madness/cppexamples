@@ -1,3 +1,6 @@
+#ifndef test1
+#define test1
+
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -28,7 +31,7 @@
         If it takes a long time, just reduce the number of iterations.
 */
 
-void run_test() {
+void run_test1() {
     locker locker_;
 
     // the loops test for re-locking/memory management
@@ -42,8 +45,9 @@ void run_test() {
             auto lock3 = locker_.lock_shared(20 + i, 30 + i);
             auto lock4 = locker_.lock_shared(20 + i, 30 + i);
         }
+        
     }
-
+    std::cout << "Checkpoint1" << std::endl;
     {
         std::vector<exclusive_lock> locks;
 
@@ -53,10 +57,11 @@ void run_test() {
         for (std::size_t i = 0; i < 7000; i += 7) {
             std::size_t offset = (i % 1000) * width;
             // these shouldn't block
+            std::cout << "i: "<<i << "offset: " << offset << std::endl;
             locks.emplace_back(locker_.lock_exclusive(offset, offset + width));
         }
     }
-
+    std::cout << "Checkpoint2" << std::endl;
     {
         std::vector<shared_lock> locks;
 
@@ -69,7 +74,7 @@ void run_test() {
             locks.emplace_back(locker_.lock_shared(offset, offset + width));
         }
     }
-
+    std::cout << "Checkpoint3" << std::endl;
     {
         // moves work
         auto lock1 = locker_.lock_exclusive(0, 10);
@@ -79,7 +84,7 @@ void run_test() {
             std::swap(lock2, lock1);
         }
     }
-
+    std::cout << "Checkpoint4" << std::endl;
     {
         // moves work
         auto lock1 = locker_.lock_shared(0, 10);
@@ -89,7 +94,7 @@ void run_test() {
             std::swap(lock2, lock1);
         }
     }
-
+    std::cout << "Checkpoint5" << std::endl;
     {
         // explicit unlocks work
         auto lock1 = locker_.lock_exclusive(0, 10);
@@ -100,7 +105,7 @@ void run_test() {
 
         lock1 = locker_.lock_exclusive(0, 10);
     }
-
+    std::cout << "Checkpoint6" << std::endl;
     {
         // two lockers are independent
         locker other_locker;
@@ -114,8 +119,8 @@ void run_test() {
         (void)lock1, (void)lock3;
     }
 }
-
-int main() {
+#endif // !1
+/*int main() {
     run_test();
     std::cout << "OK" << std::endl;
-}
+}*/

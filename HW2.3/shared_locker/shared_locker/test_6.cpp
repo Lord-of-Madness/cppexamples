@@ -10,7 +10,7 @@
     its unlock/destruction should unlock all of the shared locks.
 */
 
-void run_test() {
+void run_test6() {
     using namespace std::chrono_literals;
 
     locker locker_;

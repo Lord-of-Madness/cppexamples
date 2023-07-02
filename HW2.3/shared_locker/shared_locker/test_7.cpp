@@ -11,7 +11,7 @@
     probably block one another.
 */
 
-void run_test() {
+void run_test7() {
     using namespace std::chrono_literals;
 
     locker locker_;

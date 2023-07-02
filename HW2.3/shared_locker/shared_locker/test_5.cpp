@@ -10,7 +10,7 @@
     This test checks whether ~locker really waits.
 */
 
-void run_test() {
+void run_test5() {
     using namespace std::chrono_literals;
     std::jthread thread;
 

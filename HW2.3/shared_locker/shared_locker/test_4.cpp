@@ -68,7 +68,7 @@ void multi_test(locker &locker_) {
     test_unit<FirstLock, SecondLock>(locker_, __LINE__, {0, 1000}, {{0, 1000}, {100, 900}, {200, 800}, {300, 700}, {400, 600}});
 }
 
-void run_test() {
+void run_test4() {
     locker locker_;
     multi_test<exclusive_lock, exclusive_lock>(locker_);
     multi_test<shared_lock, exclusive_lock>(locker_);

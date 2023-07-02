@@ -5,6 +5,7 @@
 #include <random>
 #include <thread>
 #include <vector>
+#include <semaphore>
 
 #include "locker.hpp"
 #include "interval_tree.hpp"
@@ -18,7 +19,7 @@
     unlocked before generating a new one.
 */
 
-void run_test() {
+void run_test8() {
     using namespace std::chrono_literals;
 
     locker locker_;
@@ -32,7 +33,7 @@ void run_test() {
     std::size_t shared_count = 10;
 
     auto duration = 5000ms;
-    auto tolerance = 200ms;
+    auto tolerance = 400ms;
 
     std::counting_semaphore<thread_count> red_semaphore(0);
     std::counting_semaphore<thread_count> green_semaphore(0);

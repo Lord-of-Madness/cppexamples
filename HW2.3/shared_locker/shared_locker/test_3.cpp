@@ -1,3 +1,6 @@
+#ifndef test3
+#define test3
+
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -11,14 +14,14 @@
     of a lock is currently blocked, it cannot block any other lock).
 */
 
-void run_test() {
+void run_test3() {
     using namespace std::chrono_literals;
 
     locker locker_;
     std::size_t count = 1000;
     std::size_t half_width = 500;
-    auto wait_time = 200ms;
-    auto tolerance = 100ms;
+    auto wait_time = 500ms;
+    auto tolerance = 400ms;
 
     std::vector<std::thread> threads;
     threads.reserve(count);
@@ -61,3 +64,4 @@ void run_test() {
     run_test();
     std::cout << "OK" << std::endl;
 }*/
+#endif

@@ -43,7 +43,7 @@ void test_unit(locker &locker_, std::size_t line, std::pair<std::size_t, std::si
     thread.request_stop();
 }
 
-void run_test() {
+void run_test10() {
     using namespace std::chrono_literals;
     locker locker_;
 
