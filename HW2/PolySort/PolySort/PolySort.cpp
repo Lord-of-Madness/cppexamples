@@ -17,7 +17,7 @@ using namespace std;
 class inconsistency_exception : exception
 {
 public:
-	const char *what() const throw() override
+	const char* what() const throw() override
 	{
 		return "Inconsistent rows";
 	}
@@ -25,19 +25,19 @@ public:
 
 struct
 {
-	istream *input = &cin;
-	ostream *output = &cout;
+	istream* input = &cin;
+	ostream* output = &cout;
 	ifstream infile;
 	ofstream outfile;
 	char separator = ' ';
 	vector<tuple<char, int>> sort_columns;
 	vector<char> type_columns;
-	const char accepted_types[2] = {'N', 'S'};
+	const char accepted_types[2] = { 'N', 'S' };
 	// map<const char,const string>myID_to_realID = { {'N',typeid(int).name()},{'S',typeid(string).name()} };
 
 } parameters; // for sake of making it easier I do it this static way. If I were to scale it up I would naturaly make instances of this struct
 
-void arg_processing(const size_t argc, const vector<string> &args)
+void arg_processing(const size_t argc, const vector<string>& args)
 {
 	for (size_t i = 0; i < argc; ++i)
 	{
@@ -64,7 +64,7 @@ void arg_processing(const size_t argc, const vector<string> &args)
 			}
 			case 'o':
 			{
-				parameters.outfile =  ofstream(val, ofstream::out);
+				parameters.outfile = ofstream(val, ofstream::out);
 				parameters.output = &parameters.outfile;
 				break;
 			}
@@ -107,60 +107,46 @@ public:
 	virtual void print() const = 0;
 	virtual unique_ptr<abstractvalue> clone() = 0;
 	char type = 0;
+	virtual bool operator<(abstractvalue& x)const = 0;
 };
-class intvalue final : public abstractvalue
+template <typename T>
+class variant final : public abstractvalue
 {
 public:
-	intvalue(int val)
+	variant(T val)
 	{
 		type = 'N';
 		this->val = val;
 	}
-	bool operator<(intvalue &x) const
+	bool operator<(abstractvalue& x)const override {
+		if (type == x.type) {
+			return *this < *dynamic_cast<variant*>(&x);
+		}
+		else return false;
+	}
+	bool operator<(variant& x) const
 	{
 		return val < x.val;
 	}
 	unique_ptr<abstractvalue> clone() override
 	{
-		return make_unique<intvalue>(*this);
+		return make_unique<variant>(*this);
 	}
 	void print() const override
 	{
 		cout << val;
 	}
-	int val;
-};
-class stringvalue final : public abstractvalue
-{
-public:
-	stringvalue(string val)
-	{
-		type = 'S';
-		this->val = val;
-	}
-	bool operator<(stringvalue &x) const
-	{
-		return val < x.val;
-	}
-	unique_ptr<abstractvalue> clone() override
-	{
-		return make_unique<stringvalue>(*this);
-	}
-	void print() const override
-	{
-		cout << val;
-	}
-	string val;
+	T val;
 };
 
-class my_list
+class list
 {
 public:
-	abstractvalue &operator[](const int i) const
+	abstractvalue& operator[](const int i) const
 	{
 		return *inner_list[i];
 	}
-	my_list() {}
+	list() {}
 	void add(string s)
 	{
 		size_t pos = inner_list.size();
@@ -168,10 +154,10 @@ public:
 		switch (required_type)
 		{
 		case 'N':
-			add(make_unique<intvalue>(stoi(s)));
+			add(make_unique<variant<int>>(stoi(s)));
 			break;
 		case 'S':
-			add(make_unique<stringvalue>(s));
+			add(make_unique<variant<string>>(s));
 			break;
 		default:
 			throw exception();
@@ -186,9 +172,9 @@ public:
 	{
 		return inner_list.size();
 	}
-	void clone(const my_list &l)
+	void clone(const list& l)
 	{
-		for (auto &&x : l.inner_list)
+		for (auto&& x : l.inner_list)
 		{
 			inner_list.push_back(x->clone());
 		}
@@ -196,16 +182,19 @@ public:
 	void print() const
 	{
 		size_t cnt = 0;
-		for (auto &&cell : inner_list)
+		for (auto&& cell : inner_list)
 		{
 			cell->print();
 			++cnt;
-			if(cnt!=inner_list.size())
-			cout << parameters.separator;
+			if (cnt != inner_list.size())
+				cout << parameters.separator;
 		}
 	}
-	my_list(const my_list &s) { clone(s); }
-	my_list &operator=(const my_list &s)
+	list(const list& s) { clone(s); }
+	list(list&& other)noexcept {
+		inner_list = std::move(other.inner_list);
+	}
+	list& operator=(const list& s)
 	{
 		if (this == &s)
 			return *this;
@@ -225,7 +214,7 @@ public:
 
 	void print() const
 	{
-		for (const my_list &item : rows)
+		for (const list& item : rows)
 		{
 			item.print();
 			cout << endl;
@@ -234,53 +223,49 @@ public:
 	void sortList(tuple<char, int> t)
 	{
 		char type = get<0>(t);
-		int index = get<1>(t)-1;
-		if (type == 'N')
-			sort(rows.begin(), rows.end(), [index](const my_list &a, const my_list &b)
-				{return *dynamic_cast<intvalue*>(&a[index])<*dynamic_cast<intvalue*>(&b[index]); });//So i have noticed that this is somewhat ineffective as the reasignment is doing a lot of copiing... but I really really don't want to write my own sort
-		else if (type == 'S')
-			sort(rows.begin(), rows.end(), [index](const my_list &a,const my_list &b)
-				 { return *dynamic_cast<stringvalue *>(&a[index]) < *dynamic_cast<stringvalue *>(&b[index]); });
+		int index = get<1>(t) - 1;
+		sort(rows.begin(), rows.end(), [index](const list& a, const list& b)
+			{return a[index] < b[index]; });
 	}
-	void add(my_list &l)
+	void add(list& l)
 	{
-		rows.push_back(move(l)); // for some reason this clones the list. Well... I guess I understand why it happens but still don"t know how to fix it.
+		rows.push_back(move(l));
 	}
 
 private:
-	vector<my_list> rows;
+	vector<list> rows;
 };
 
-void prepare_column_types(const size_t len){
-	for(size_t i=0;i<len;i++){
+void prepare_column_types(const size_t len) {
+	for (size_t i = 0; i < len; i++) {
 		parameters.type_columns.emplace_back('S');
 	}
-	for(tuple<char,int> col:parameters.sort_columns){
+	for (tuple<char, int> col : parameters.sort_columns) {
 		char type = get<0>(col);
 		int pos = get<1>(col);
-		if(type!='S'){
-			parameters.type_columns[pos-1]=type;
+		if (type != 'S') {
+			parameters.type_columns[pos - 1] = type;
 		}
 	}
 }
 
-void parse_input(table &table_)
+void parse_input(table& table_)
 {
 	string line;
 	size_t len = 0;
 	while (getline(*parameters.input, line))
 	{
-		my_list lst;
+		list lst;
 		size_t start = 0, end = 0;
-		if (len == 0){
-			for(char c : line)
+		if (len == 0) {
+			for (char c : line)
 			{
 				if (c == parameters.separator)++len;
 			}
 			++len;
-			if(len==0)throw inconsistency_exception();
+			if (len == 0)throw inconsistency_exception();
 			prepare_column_types(len);
-			}
+		}
 		while (end != string::npos)
 		{
 			end = line.find(parameters.separator, start);
@@ -295,7 +280,7 @@ void parse_input(table &table_)
 	}
 }
 
-int main(const int argc, char *argv[])
+int main(const int argc, char* argv[])
 {
 	// argument processing
 	vector<string> args;
@@ -305,7 +290,7 @@ int main(const int argc, char *argv[])
 	{
 		arg_processing(static_cast<size_t>(argc) - 1, args);
 	}
-	catch (invalid_argument &e)
+	catch (invalid_argument& e)
 	{
 		cerr << e.what();
 		return 0;
@@ -317,18 +302,18 @@ int main(const int argc, char *argv[])
 	{
 		parse_input(table_);
 	}
-	catch (inconsistency_exception &e)
+	catch (inconsistency_exception& e)
 	{
 		cerr << e.what();
 		return 0;
 	}
-	catch (exception &e)
+	catch (exception& e)
 	{
 		cerr << e.what();
 		return 0;
-	}	
+	}
 	// sort the table
-	for (auto &&col = parameters.sort_columns.rbegin(); col != parameters.sort_columns.rend(); ++col)
+	for (auto&& col = parameters.sort_columns.rbegin(); col != parameters.sort_columns.rend(); ++col)
 	{
 		table_.sortList(*col);
 	}
