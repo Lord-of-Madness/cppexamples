@@ -202,6 +202,13 @@ public:
 		clone(s);
 		return *this;
 	};
+	list& operator=(list&& s)noexcept
+	{
+		if (this == &s)
+			return *this;
+		inner_list = move(s.inner_list);
+		return *this;
+	};
 
 private:
 	vector<unique_ptr<abstractvalue>> inner_list;
@@ -220,10 +227,8 @@ public:
 			cout << endl;
 		}
 	}
-	void sortList(tuple<char, int> t)
+	void sortList(int index)
 	{
-		char type = get<0>(t);
-		int index = get<1>(t) - 1;
 		sort(rows.begin(), rows.end(), [index](const list& a, const list& b)
 			{return a[index] < b[index]; });
 	}
@@ -236,20 +241,19 @@ private:
 	vector<list> rows;
 };
 
-void prepare_column_types(const size_t len) {
+static void prepare_column_types(const size_t len) {
 	for (size_t i = 0; i < len; i++) {
 		parameters.type_columns.emplace_back('S');
 	}
 	for (tuple<char, int> col : parameters.sort_columns) {
 		char type = get<0>(col);
-		int pos = get<1>(col);
 		if (type != 'S') {
-			parameters.type_columns[pos - 1] = type;
+			parameters.type_columns[get<1>(col) - 1] = type;
 		}
 	}
 }
 
-void parse_input(table& table_)
+static void parse_input(table& table_)
 {
 	string line;
 	size_t len = 0;
@@ -315,7 +319,7 @@ int main(const int argc, char* argv[])
 	// sort the table
 	for (auto&& col = parameters.sort_columns.rbegin(); col != parameters.sort_columns.rend(); ++col)
 	{
-		table_.sortList(*col);
+		table_.sortList(get<1>(*col) - 1);
 	}
 	// print the table
 	table_.print();
