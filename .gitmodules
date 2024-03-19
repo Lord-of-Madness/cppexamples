@@ -1,0 +1,3 @@
+[submodule "Zapoctak/godot-rts"]
+	path = Zapoctak/godot-rts
+	url = https://gitlab.mff.cuni.cz/teaching/nprg045/cerny/godot-rts.git
