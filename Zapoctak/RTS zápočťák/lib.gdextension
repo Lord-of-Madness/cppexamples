@@ -1,8 +1,0 @@
-[configuration]
-
-entry_symbol = "example_library_init"
-compatibility_minimum = "4.2"
-
-[libraries]
-
-windows.debug.x86_64 = "DLLs/lib.windows.template_debug.x86_64.dll"
