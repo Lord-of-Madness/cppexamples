@@ -18,14 +18,14 @@ sources = Glob("Project1/*.cpp")
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(
-        "C:/Users/zemek/Desktop/CODE/C++/malyjir/Zapoctak/RTS zápočťák/DLLs/lib.{}.{}.framework/lib.{}.{}".format(
+        "C:/Users/zemek/Desktop/CODE/C++/malyjir/Zapoctak/godot-rts/DLLs/lib.{}.{}.framework/lib.{}.{}".format(
             env["platform"], env["target"], env["platform"], env["target"]
         ),
         source=sources,
     )
 else:
     library = env.SharedLibrary(
-        "C:/Users/zemek/Desktop/CODE/C++/malyjir/Zapoctak/RTS zápočťák/DLLs/lib{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+        "C:/Users/zemek/Desktop/CODE/C++/malyjir/Zapoctak/godot-rts/DLLs/lib{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
         source=sources,
     )
 
