@@ -5,7 +5,6 @@
 #include <godot_cpp/classes/editor_plugin.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_script.hpp>
-#define NAMEOF(name) #name
 
 namespace godot {
 
