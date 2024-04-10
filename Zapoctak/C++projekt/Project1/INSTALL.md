@@ -1,3 +1,5 @@
+Requirements: see godot-cpp install guide
+
 To run this project
 1. clone it
 2. update submodule godot-cpp (make sure the branch is 4.2)
