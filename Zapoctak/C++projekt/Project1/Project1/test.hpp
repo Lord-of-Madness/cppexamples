@@ -21,7 +21,7 @@ namespace godot {
 	public:
 		GDExample();
 		~GDExample();
-		void SumoonMadness() const;
+		void SummonMadness() const;
 		void set_exportproperty(const double val);
 		double get_exportproperty() const;
 		void _process(double delta) override;
