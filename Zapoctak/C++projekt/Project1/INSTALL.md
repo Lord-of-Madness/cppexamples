@@ -13,4 +13,4 @@ godot-cpp repo: https://github.com/godotengine/godot-cpp/tree/4.2?tab=readme-ov-
 Output DLL will be placed in malyjir/Zapoctak/godot-rts/DLLs
 This can be configured in SConstruct.py
 
-Project is set up for Windows. For building on Linux and Mac see the godot-cpp install guide.
+Project is set up for Windows. For building on Linux and Mac see the godot-cpp install guide for differences.
