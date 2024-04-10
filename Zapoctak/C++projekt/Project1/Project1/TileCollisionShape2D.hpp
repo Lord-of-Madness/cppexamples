@@ -16,6 +16,11 @@
 #include<godot_cpp/classes/character_body2d.hpp>
 
 namespace godot {
+	/// <summary>
+	/// Collider used for CharacterBodies placed on Tilemaps
+	/// Snaps to the Tilemap grid (in editor and in game)
+	/// Looks for default TileMap named "Ground" under scene root
+	/// </summary>
 	class TileCollisionShape2D :public CollisionShape2D
 	{
 		GDCLASS(TileCollisionShape2D, CollisionShape2D)
