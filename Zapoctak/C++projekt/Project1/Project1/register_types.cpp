@@ -20,7 +20,7 @@ void initialize_RTS_module(ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(TileCollisionShape2D)
 		GDREGISTER_CLASS(Obstacle)
 		GDREGISTER_CLASS(GDEditorTest)
-		EditorPlugins::add_by_type<GDEditorTest>();
+		//EditorPlugins::add_by_type<GDEditorTest>();
 		GDREGISTER_CLASS(GDEditorScriptTest);
 	}
 
@@ -29,7 +29,7 @@ void initialize_RTS_module(ModuleInitializationLevel p_level) {
 
 void uninitialize_RTS_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorPlugins::remove_by_type<GDEditorTest>();
+		//EditorPlugins::remove_by_type<GDEditorTest>();
 		return;
 	}
 }

@@ -1,5 +1,5 @@
-#ifndef RTS_TILESCOLLISIONSHAPE2D
-#define RTS_TILESCOLLISIONSHAPE2D
+#ifndef RTS_TILECOLLISIONSHAPE2D
+#define RTS_TILECOLLISIONSHAPE2D
 
 #include <godot_cpp/classes/collision_shape2d.hpp>
 #include <godot_cpp/classes/rectangle_shape2d.hpp>
@@ -9,13 +9,14 @@
 #include "UtilityMacros.hpp"
 #include "ExtensionMethods.hpp"
 #include <godot_cpp/classes/world2d.hpp>
-//#include<godot_cpp/classes/physics_direct_space_state2d.hpp>
-//#include<godot_cpp/classes/physics_shape_query_parameters2d.hpp>
+#include<godot_cpp/classes/physics_direct_space_state2d.hpp>
+#include<godot_cpp/classes/physics_shape_query_parameters2d.hpp>
 #include<godot_cpp/variant/variant.hpp>
 #include<godot_cpp/classes/scene_tree.hpp>
 #include<godot_cpp/classes/character_body2d.hpp>
 
 namespace godot {
+
 	/// <summary>
 	/// Collider used for CharacterBodies placed on Tilemaps
 	/// Snaps to the Tilemap grid (in editor and in game)
@@ -38,6 +39,75 @@ namespace godot {
 		virtual void _ready()override;
 		virtual void _process(const double delta) override;
 		bool isTileMap(const Dictionary& x)const;
+		/// <summary>
+		/// Gets list of collisions at the target location with the area of rect exludes self
+		/// </summary>
+		/// <param name="place"> centerpoint of the checked area</param>
+		/// <returns>intersected shapes</returns>
+		TypedArray<Dictionary> get_collisions_at(Vector2 place) const {
+			Ref<PhysicsShapeQueryParameters2D> query;
+			query.instantiate();
+			query->set_shape(rect);
+			query->set_transform(Transform2D(0, place));
+			TypedArray<Dictionary> x = get_world_2d()->get_direct_space_state()->intersect_shape(query, 50);
+			for (int64_t i = 0;i<x.size();i++)
+			{
+				//PRINT("INFOSTART");
+				//Variant z = x[i].get("collider_id");
+				//PRINT(rect->get_instance_id());
+				//PRINT(get_instance_id());
+				//PRINT(get_parent()->get_instance_id());
+				//PRINT((uint64_t)z == get_parent()->get_instance_id());
+				//PRINT("__________");
+				if ((uint64_t)(x[i].get("collider_id")) == get_parent()->get_instance_id()) { x.remove_at(i);  break; }
+			}
+			return x;
+
+		}
+		/// <summary>
+		/// gets parent node position if possible
+		/// </summary>
+		/// <returns>position of the parent node, Vector.ZERO if unable</returns>
+		Vector2 get_parent_position() const {
+			if (get_parent() != nullptr && get_parent()->is_class(NAMEOF(Node2D))) {
+				return ((Node2D*)get_parent())->get_position();
+			}
+			return Vector2(0, 0);
+		}
+		Vector2 get_parent_position_grided() {
+			Vector2 size = rect->get_size();
+			Vector2 rectmid = (size / 2) % 16;
+			return ((get_parent_position() / 16).floor()) * 16 + rectmid;
+		}
+		void try_set_map() {
+			if (get_map() != nullptr)return;
+			Node* node = nullptr;
+
+			if (Engine::get_singleton()->is_editor_hint()) {
+				/*PRINT("We's bein' in le editour");
+				PRINT(is_node_ready());
+				PRINT(get_tree()->get_edited_scene_root()->get_class());
+				PRINT(get_tree()->get_edited_scene_root()->is_class(NAMEOF(CharacterBody2D)));*/
+				if (!get_tree()->get_edited_scene_root()->is_class(NAMEOF(CharacterBody2D))) {
+					//PRINT("looking for map");
+					//PRINT(get_tree()->get_edited_scene_root()->get_name());
+					//PRINT(get_tree_string());
+					node = get_tree()->get_edited_scene_root()->get_node_or_null("Ground");
+					if (node == nullptr)node = get_tree()->get_edited_scene_root()->get_node_or_null("Map/Ground");
+					//PRINT(node != nullptr);
+				}
+			}
+			else {
+				PRINT(get_tree()->get_current_scene()->get_name());
+				node = get_tree()->get_current_scene()->get_node_or_null("Ground");
+				if (node == nullptr)node = get_tree()->get_current_scene()->get_node_or_null("Map/Ground");
+				//PRINT(node->get_name());
+			}
+			if (node != nullptr && node->is_class(NAMEOF(TileMap))) {
+				set_map((TileMap*)node);
+				PRINT("Map found");
+			}
+		}
 
 	protected:
 		static void _bind_methods();
@@ -49,6 +119,7 @@ namespace godot {
 		bool replacing = false;
 		int TILESIZE = 16;
 		bool ready = false;
+		bool valid = false;
 		//NodePath mappath;
 	private:/*
 		/// <summary>Assumes square tiles</summary>
@@ -68,20 +139,22 @@ namespace godot {
 	{
 		PRINT("Constructor");
 		rect.instantiate();
-		PRINT("Constructor DONE");
 	}
 	inline TileCollisionShape2D::~TileCollisionShape2D()
 	{
+		if (cm.atlascoords.size() != 0)RestoreGround();
 	}
 	void TileCollisionShape2D::updateParentPosition() {
-		;
-		if (!get_parent()->is_class(NAMEOF(Node2D)))return;
-		Vector2 size = rect->get_size();
-		Vector2 rectmid = (size / 2) % 16;
 		Node2D* parent = (Node2D*)get_parent();
-		parent->set_position(((parent->get_position() / 16).floor()) * 16 + rectmid);
-		if (cm.atlascoords.size() != 0)RestoreGround();
-		TaintGround();
+		Vector2 new_position = get_parent_position_grided();
+		if (get_collisions_at(new_position).size() == 0) {
+			valid = true;
+			parent->set_position(new_position);
+
+			if (cm.atlascoords.size() != 0)RestoreGround();
+			TaintGround();
+		}
+		else parent->set_position(oldPosition);
 	}
 
 	inline void TileCollisionShape2D::set_size(const Vector2& size)
@@ -102,13 +175,13 @@ namespace godot {
 	}
 	inline void TileCollisionShape2D::set_map(TileMap* tm)
 	{
-		PRINT("SETING MAP");
+		//PRINT("SETING MAP");
 		map = tm;
 		updateParentPosition();
 	}
 	inline void TileCollisionShape2D::set_map_from_path(const NodePath& n)
 	{
-		PRINT("SETING MAPfp");
+		//PRINT("SETING MAPfp");
 		//mappath = n;
 		Node* ptr = get_node_or_null(n);
 		if (ptr != nullptr && ptr->is_class(NAMEOF(TileMap))) {
@@ -119,12 +192,14 @@ namespace godot {
 		}
 	}
 	inline void TileCollisionShape2D::TaintGround() {
+		PRINT(map);
 		if (replacing && map != nullptr) {
-			Vector2i pos((get_position() / 16));
+			PRINT("TAINTING");
+			Vector2i pos((get_parent_position() / 16));
 			int offx = 0;
 			int offy = 0;
-			if (get_position().x < 0 && (size.x % 2 == 1 || pos.x == 0))offx = -1;
-			if (get_position().y < 0 && (size.y % 2 == 1 || pos.y == 0))offy = -1;
+			if (get_parent_position().x < 0 && (size.x % 2 == 1 || pos.x == 0))offx = -1;
+			if (get_parent_position().y < 0 && (size.y % 2 == 1 || pos.y == 0))offy = -1;
 			cm = CellMatrix(pos + Vector2i(offx, offy), size);
 			for (int h = 0; h < size.y; h++)
 				for (int w = 0; w < size.x; w++) {
@@ -151,61 +226,23 @@ namespace godot {
 		PRINT("Ready");
 		ready = true;
 		set_shape(rect);
-		set_size(size);
-		updateParentPosition();
+		
+		
 		if (!Engine::get_singleton()->is_editor_hint()) {
+			oldPosition = get_parent_position_grided();
+			set_size(size);
 			replacing = true;
-			TaintGround();
+			try_set_map();
+			if (cm.atlascoords.size() == 0)TaintGround();
+		}
+		else {
+			set_size(size);
 		}
 	}
 	inline void TileCollisionShape2D::_process(const double delta) {
-		if (get_map() == nullptr) {
-			Node* node = nullptr;
 
-			if (Engine::get_singleton()->is_editor_hint()) {
-				/*PRINT("We's bein' in le editour");
-				PRINT(is_node_ready());
-				PRINT(get_tree()->get_edited_scene_root()->get_class());
-				PRINT(get_tree()->get_edited_scene_root()->is_class(NAMEOF(CharacterBody2D)));*/
-				if (!get_tree()->get_edited_scene_root()->is_class(NAMEOF(CharacterBody2D))) {
-					PRINT("looking for map");
-					PRINT(get_tree()->get_edited_scene_root()->get_name());
-					PRINT(get_tree_string());
-					node = get_tree()->get_edited_scene_root()->get_node_or_null("Ground");
-					PRINT(node != nullptr);
+		try_set_map();
 
-					/*
-					Ref<PhysicsShapeQueryParameters2D> query;
-					query.instantiate();
-					query->set_shape(rect);
-					query->set_transform(Transform2D(0, parent->get_position()));
-					TypedArray<Dictionary> ar = get_world_2d()->get_direct_space_state()->intersect_shape(query, 50);
-					PRINT("instersection complete");
-					for (int i = 0; i < ar.size(); i++) {
-						if (isTileMap(ar[i])) {
-							PRINT("FOUND IT!");
-							set_map_(((TileMap*)(Object*)ar[i]));
-							break;
-						}
-					}*/
-					/*
-					//No clue what are the required parameters of isTileMap (couldn't find it in source)
-					auto far = ar.filter(Callable(this, NAMEOF(isTileMap)));
-					if (far.size() > 0) {
-						set_map((TileMap*)(Object*)far[0]);
-					}*/
-				}
-			}
-			else {
-				PRINT(get_tree()->get_current_scene()->get_name());
-				node = get_tree()->get_current_scene()->get_node_or_null("Ground");
-				//PRINT(node->get_name());
-			}
-			if (node != nullptr && node->is_class(NAMEOF(TileMap))) {
-				set_map((TileMap*)node);
-				PRINT("Map found");
-			}
-		}
 		if (get_parent()->is_class(NAMEOF(Node2D))) {
 			Node2D* parent = (Node2D*)get_parent();
 			if (oldPosition != parent->get_position() && map != nullptr) {
