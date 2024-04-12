@@ -8,7 +8,9 @@
 #include <godot_cpp/classes/physics_direct_space_state2d.hpp>
 #include <godot_cpp/classes/physics_shape_query_parameters2d.hpp>
 namespace godot {
-
+	inline bool TileCollisionShape2D::get_replacing() const {
+		return replacing;
+	}
 	void TileCollisionShape2D::_bind_methods()
 	{
 		PROPERTYADD(PropertyInfo(Variant::VECTOR2I, "SizeInTiles", PROPERTY_HINT_NONE, "Size in px rounded to tiles"), get_size, set_size);
@@ -146,6 +148,12 @@ namespace godot {
 		if (node != nullptr && node->is_class(NAMEOF(TileMap))) {
 			set_map((TileMap*)node);
 		}
+	}
+
+	inline void TileCollisionShape2D::set_replacing(bool r) {
+		replacing = r;
+		if (r)TaintGround();
+		else RestoreGround();
 	}
 
 	inline void TileCollisionShape2D::_ready()

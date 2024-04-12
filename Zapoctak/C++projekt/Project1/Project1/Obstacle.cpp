@@ -69,7 +69,7 @@ inline void Obstacle::TaintGround() {
 		int offy = 0;
 		if (get_position().x < 0 && (width % 2 == 1 || pos.x == 0))offx = -1;
 		if (get_position().y < 0 && (height % 2 == 1 || pos.y == 0))offy = -1;
-		cm = CellMatrix(pos + Vector2i(offx, offy), height, width);
+		cm = CellMatrix(pos + Vector2i(offx, offy), Vector2i(width, height)) ;
 		for (int h = 0; h < height; h++)
 			for (int w = 0; w < width; w++) {
 				Vector2i coords(pos.x + w + offx - width / 2, pos.y + h + offy - height / 2);
