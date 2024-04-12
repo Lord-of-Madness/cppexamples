@@ -2,4 +2,5 @@
 
 This project adds utility nodes for the godot RTS project
 
-install guide in INSTALL.md
+[Install guide](INSTALL.md)
+[Documentation](Documentation.md)
