@@ -1,7 +1,7 @@
 #ifndef RTS_UTILITYMACROS
 #define RTS_UTILITYMACROS
-
-
+#include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/core/class_db.hpp>
 
 #define NAMEOF(name) #name
 
