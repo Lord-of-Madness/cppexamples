@@ -23,12 +23,12 @@ namespace godot {
 		TileMap* get_map() const;
 		void set_map(TileMap* m);
 		void set_map_from_path(const NodePath& n);
-		void TaintGround();
-		void RestoreGround() const;
+		void LockGround();
+		void UnlockGround() const;
 		virtual void _process(const double delta) override;
-		bool BLACKMAGICENABLER = false;
-		bool get_blackMagic()const;
-		void set_blackMagic(const bool b);
+		bool replacing = false;
+		bool get_replacing()const;
+		void set_replacing(const bool b);
 		int get_tileSize();
 	protected:
 		static void _bind_methods();

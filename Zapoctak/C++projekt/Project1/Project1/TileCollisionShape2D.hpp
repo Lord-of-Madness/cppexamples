@@ -27,8 +27,8 @@ namespace godot {
 		void set_map(TileMap* tm);
 		void set_map_from_path(const NodePath& n);
 		void updateParentPosition();
-		void TaintGround();
-		void RestoreGround() const;
+		void LockGround();
+		void UnlockGround() const;
 		virtual void _ready()override;
 		virtual void _process(const double delta) override;
 		bool isTileMap(const Dictionary& x)const;
@@ -48,6 +48,9 @@ namespace godot {
 		/// </summary>
 		/// <returns></returns>
 		Vector2 get_parent_position_grided();
+		/// <summary>
+		/// Looks at the expected locations for map (root/Ground or root/Map/Ground)
+		/// </summary>
 		void try_set_map();
 		void set_replacing(bool r);
 		bool get_replacing() const;

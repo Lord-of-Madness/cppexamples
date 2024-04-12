@@ -22,7 +22,7 @@ namespace godot {
 	}
 	TileCollisionShape2D::~TileCollisionShape2D()
 	{
-		if (cellMatrix.atlascoords.size() != 0)RestoreGround();
+		if (cellMatrix.atlascoords.size() != 0)UnlockGround();
 	}
 	void TileCollisionShape2D::updateParentPosition() {
 		Node2D* parent = (Node2D*)get_parent();
@@ -30,8 +30,8 @@ namespace godot {
 		if (get_collisions_at(new_position).size() == 0) {
 			parent->set_position(new_position);
 
-			if (cellMatrix.atlascoords.size() != 0)RestoreGround();
-			TaintGround();
+			if (cellMatrix.atlascoords.size() != 0)UnlockGround();
+			LockGround();
 		}
 		else parent->set_position(oldPosition);
 	}
@@ -66,7 +66,7 @@ namespace godot {
 			map = nullptr;
 		}
 	}
-	inline void TileCollisionShape2D::TaintGround() {
+	inline void TileCollisionShape2D::LockGround() {
 		if (replacing && map != nullptr) {
 			Vector2i pos((get_parent_position() / 16));
 			int offx = 0;
@@ -82,7 +82,7 @@ namespace godot {
 				}
 		}
 	}
-	inline void TileCollisionShape2D::RestoreGround() const {
+	inline void TileCollisionShape2D::UnlockGround() const {
 		for (int h = 0; h < cellMatrix.height; h++)
 			for (int w = 0; w < cellMatrix.width; w++) {
 				map->set_cell(0, cellMatrix.coords + Vector2i(w - cellMatrix.width / 2, h - cellMatrix.height / 2), 33, cellMatrix.atlascoords[h][w]);
@@ -152,8 +152,8 @@ namespace godot {
 
 	inline void TileCollisionShape2D::set_replacing(bool r) {
 		replacing = r;
-		if (r)TaintGround();
-		else RestoreGround();
+		if (r)LockGround();
+		else UnlockGround();
 	}
 
 	inline void TileCollisionShape2D::_ready()
@@ -168,7 +168,7 @@ namespace godot {
 			set_size(size);
 			replacing = true;
 			if (get_map() == nullptr)try_set_map();
-			if (cellMatrix.atlascoords.size() == 0)TaintGround();
+			if (cellMatrix.atlascoords.size() == 0)LockGround();
 		}
 		else {
 			set_size(size);

@@ -20,20 +20,20 @@ void Obstacle::_ready() {
 	set_pos();
 	set_map_from_path(get_parent()->get_path());
 	if (!Engine::get_singleton()->is_editor_hint()) {
-		set_blackMagic(true);
+		set_replacing(true);
 	}
 }
 void godot::Obstacle::_exit_tree()
 {
-	RestoreGround();
+	UnlockGround();
 }
 inline void Obstacle::set_pos() {
 	Vector2 size(width * TILESIZE, height * TILESIZE);
 	rect.ptr()->set_size(size);
 	Vector2 rectmid = (size / 2) % 16;
 	set_position(((get_position() / 16).floor()) * 16 + rectmid);
-	if (cm.atlascoords.size() != 0)RestoreGround();
-	TaintGround();
+	if (cm.atlascoords.size() != 0)UnlockGround();
+	LockGround();
 }
 inline void Obstacle::set_height(const int h) {
 	height = h;
@@ -62,8 +62,8 @@ inline void Obstacle::set_map_from_path(const NodePath& n) {
 		map = nullptr;
 	}
 }
-inline void Obstacle::TaintGround() {
-	if (BLACKMAGICENABLER && map != nullptr) {
+inline void Obstacle::LockGround() {
+	if (replacing && map != nullptr) {
 		Vector2i pos((get_position() / 16));
 		int offx = 0;
 		int offy = 0;
@@ -78,7 +78,7 @@ inline void Obstacle::TaintGround() {
 			}
 	}
 }
-inline void Obstacle::RestoreGround() const {
+inline void Obstacle::UnlockGround() const {
 	for (int h = 0; h < cm.height; h++)
 		for (int w = 0; w < cm.width; w++) {
 			map->set_cell(0, cm.coords + Vector2i(w - cm.width / 2, h - cm.height / 2), 33, cm.atlascoords[h][w]);
@@ -90,11 +90,11 @@ inline void Obstacle::_process(const double delta) {
 		oldPosition = get_position();
 	}
 }
-inline bool Obstacle::get_blackMagic() const { return BLACKMAGICENABLER; }
-inline void Obstacle::set_blackMagic(const bool b) {
-	BLACKMAGICENABLER = b;
-	if (b)TaintGround();
-	else RestoreGround();
+inline bool Obstacle::get_replacing() const { return replacing; }
+inline void Obstacle::set_replacing(const bool b) {
+	replacing = b;
+	if (b)LockGround();
+	else UnlockGround();
 }
 int Obstacle::get_tileSize()
 {
@@ -104,6 +104,6 @@ void Obstacle::_bind_methods()
 {
 	PROPERTYADD(PropertyInfo(Variant::INT, NAMEOF(height), PROPERTY_HINT_RANGE, "0,999,1"), get_height, set_height);
 	PROPERTYADD(PropertyInfo(Variant::INT, NAMEOF(width), PROPERTY_HINT_RANGE, "0,999,1"), get_width, set_width);
-	PROPERTYADD(PropertyInfo(Variant::BOOL, NAMEOF(BLACKMAGICENABLER)), get_blackMagic, set_blackMagic);
+	PROPERTYADD(PropertyInfo(Variant::BOOL, NAMEOF(replacing)), get_replacing, set_replacing);
 	PROPERTYADD(PropertyInfo(Variant::NODE_PATH, NAMEOF(map), PROPERTY_HINT_NODE_TYPE, "Map onto which we put obstacle"), get_map, set_map_from_path);
 }
