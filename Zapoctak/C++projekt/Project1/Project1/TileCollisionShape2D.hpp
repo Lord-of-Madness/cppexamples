@@ -54,6 +54,12 @@ namespace godot {
 		void try_set_map();
 		void set_replacing(bool r);
 		bool get_replacing() const;
+		void set_tile_layer(int l);
+		int get_tile_layer()const;
+		void set_tile_coords(Vector2i c);
+		Vector2i get_tile_coords();
+		int get_tile_source_id()const;
+		void set_tile_source_id(int s);
 	protected:
 		static void _bind_methods();
 		Ref<RectangleShape2D> rect;
@@ -65,6 +71,9 @@ namespace godot {
 	private:
 		Vector2 TILESIZE{ 16,16 };//defaulting to 16/16 when map not present
 		Vector2 oldPosition = Vector2(0, 0);
+		int layer = 0;
+		Vector2i tile_coords = Vector2i(14, 6);
+		int tile_source_id = 33;
 	};
 	
 }

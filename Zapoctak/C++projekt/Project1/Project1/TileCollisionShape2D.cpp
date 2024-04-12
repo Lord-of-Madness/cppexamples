@@ -11,10 +11,38 @@ namespace godot {
 	inline bool TileCollisionShape2D::get_replacing() const {
 		return replacing;
 	}
+	void TileCollisionShape2D::set_tile_layer(int l)
+	{
+		layer = l;
+	}
+	int TileCollisionShape2D::get_tile_layer() const
+	{
+		return layer;
+	}
+	void TileCollisionShape2D::set_tile_coords(Vector2i c)
+	{
+		tile_coords = c;
+	}
+	Vector2i TileCollisionShape2D::get_tile_coords()
+	{
+		return tile_coords;
+	}
+	int TileCollisionShape2D::get_tile_source_id() const
+	{
+		return tile_source_id;
+	}
+	void TileCollisionShape2D::set_tile_source_id(int s)
+	{
+		tile_source_id = s;
+	}
 	void TileCollisionShape2D::_bind_methods()
 	{
-		PROPERTYADD(PropertyInfo(Variant::VECTOR2I, "SizeInTiles", PROPERTY_HINT_NONE, "Size in px rounded to tiles"), get_size, set_size);
-		PROPERTYADD(PropertyInfo(Variant::NODE_PATH, "TileMap", PROPERTY_HINT_NODE_TYPE, "Map onto which we put obstacle"), get_map, set_map_from_path);
+		PROPERTYADD(PropertyInfo(Variant::VECTOR2I, "SizeInTiles"), get_size, set_size);
+		PROPERTYADD(PropertyInfo(Variant::NODE_PATH, "TileMap", PROPERTY_HINT_NODE_TYPE, NAMEOF(TileMap)), get_map, set_map_from_path);
+		ADD_GROUP("Replacement tile", "tile");
+		PROPERTYADD(PropertyInfo(Variant::INT, "tile_Layer"), get_tile_layer, set_tile_layer);
+		PROPERTYADD(PropertyInfo(Variant::INT, "tile_Source ID"), get_tile_source_id, set_tile_source_id);
+		PROPERTYADD(PropertyInfo(Variant::VECTOR2I, "tile_Atlas coords"), get_tile_coords, set_tile_coords);
 	}
 	TileCollisionShape2D::TileCollisionShape2D()
 	{
@@ -77,8 +105,8 @@ namespace godot {
 			for (int h = 0; h < size.y; h++)
 				for (int w = 0; w < size.x; w++) {
 					Vector2i coords(pos.x + w + offx - size.x / 2, pos.y + h + offy - size.y / 2);
-					cellMatrix.atlascoords[h][w] = map->get_cell_atlas_coords(0, coords);
-					map->set_cell(0, coords, 33, Vector2i(14, 6));
+					cellMatrix.atlascoords[h][w] = map->get_cell_atlas_coords(layer, coords);
+					map->set_cell(layer, coords, tile_source_id, tile_coords);
 				}
 		}
 	}
