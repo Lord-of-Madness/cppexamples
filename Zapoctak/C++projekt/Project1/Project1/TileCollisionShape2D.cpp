@@ -66,9 +66,9 @@ namespace godot {
 
 	inline void TileCollisionShape2D::set_size(const Vector2i& size)
 	{
-		PRINT("Setting size");
-		PRINT(size);
-		PRINT("SIZE SET");
+		//PRINT("Setting size");
+		//PRINT(size);
+		//PRINT("SIZE SET");
 		this->size = size;
 		rect->set_size(size * TILESIZE);
 		if (ready)updateParentPosition();
@@ -186,7 +186,7 @@ namespace godot {
 
 	inline void TileCollisionShape2D::_ready()
 	{
-		PRINT("Ready");
+		//PRINT("Ready");
 		ready = true;
 		set_shape(rect);
 

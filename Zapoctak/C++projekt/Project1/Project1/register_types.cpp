@@ -12,7 +12,8 @@
 namespace godot{
 
 void initialize_RTS_module(ModuleInitializationLevel p_level) {
-	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+	
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		GDREGISTER_CLASS(TileCollisionShape2D)
 		GDREGISTER_CLASS(Obstacle)
 	}
